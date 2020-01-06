@@ -3,7 +3,7 @@ import os
 import sqlite3
 import time
 
-address = ('localhost', 7402)
+address = ('localhost', 7401)
 
 # Create sockets
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -90,11 +90,15 @@ def transfer_files(username):
     print("Bem-vindo: ", username[0][1])
     while True:
         try:
-            
+
             text = input("Informe o arquivo: ")
             file = open(text,"rb")
-            file_size = os.stat(text)
-            client_socket.send(file.read(file_size.st_size))
+            aux_size = os.stat(text)
+            file_size = str(aux_size.st_size)
+            client_socket.send(file_size.encode())
+            time.sleep(0.5)
+            client_socket.send(text.encode())
+            client_socket.send(file.read(aux_size.st_size))
             file.close()
             if (text == "sair"):
                 client_socket.close()
