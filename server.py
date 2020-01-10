@@ -50,6 +50,10 @@ def client_thread(server_input, address):
         
         file_size = server_input.recv(1024)
         file_size = file_size.decode()
+        if(file_size == "Sair"):
+            print("Connection terminated from ", address)
+            server_input.close()
+            break
         file_size = int(file_size)
         
         userID = server_input.recv(1024)
@@ -73,12 +77,12 @@ def client_thread(server_input, address):
             save_path_file_db(username,userID,save_path,new_file_name,file_size)
             new_file = open(save_path,'wb')
             aux_size = 0
-            progress_bar = tqdm(total=file_size)
+            print("Uploading file...")
             while aux_size < file_size:
                 data = server_input.recv(1024)
                 new_file.write(data)
-                progress_bar.update(aux_size)
                 aux_size += len(data)
+            
             new_file.close()
             print("Successfully Uploaded by ", username)
             print()
@@ -94,5 +98,5 @@ create_files_folder()
 # Create New Threads
 while True:
     server_input, address = server_socket.accept()
-    print ("Nova conexao recebida de", address)
+    print ("New connection received from", address)
     _thread.start_new_thread(client_thread, (server_input, address))

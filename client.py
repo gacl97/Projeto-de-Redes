@@ -3,18 +3,19 @@ import os
 import sqlite3
 import time
 from tqdm import tqdm
+from getpass import getpass
 
 address = ('localhost', 7416)
 
 # Create sockets
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect(address)
+
 
 def login():
     while True:
 
         username = input("Enter username:")
-        password = input("Enter password:")
+        password = getpass("Enter password:")
         with sqlite3.connect("USERS.db") as db:
             cursor = db.cursor()
         find_user = ("SELECT * FROM user WHERE username = ? AND password = ?")
@@ -22,6 +23,7 @@ def login():
         results = cursor.fetchall()
 
         if(results):
+            print()
             print("Login successfully!")
             return results
         else:
@@ -60,6 +62,7 @@ def create_user():
     insertData = '''INSERT INTO user(username,password) VALUES(?,?)'''
     cursor.execute(insertData,[(username),(password)])
     db.commit()
+    print()
     print("Successful registration!!")
 
 def main_menu():
@@ -95,7 +98,7 @@ def show_client_files(username):
 
     if(len(results) != 0):
         for result in results:
-            print("Name: ",result[0], " Size: ", result[1])
+            print("Name: ",result[0], " Size:", result[1]/1000000, "mb (",result[1],"bytes )")
     else:
         print("You don't have any files yet!!")
     
@@ -144,6 +147,7 @@ def menu():
 def transfer_files(username):
     # Echo
     print("Bem-vindo: ", username[0][1])
+    client_socket.connect(address)
     while True:
         try:
             menu()
@@ -182,6 +186,7 @@ def transfer_files(username):
                     print("You have already uploaded this file!!")
                 file.close()
             elif (op == '3'):
+                client_socket.send("Sair".encode())
                 client_socket.close()
                 break
         except:
