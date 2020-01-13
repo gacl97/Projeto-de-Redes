@@ -6,7 +6,7 @@ import os
 import sqlite3
 from tqdm import tqdm
 
-address = ('localhost', 7416)
+address = ('localhost', 7410)
 
 # Create sockets
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,8 +43,7 @@ def save_path_file_db(username, userID, file_path, file_name, file_size):
     db.commit()
     
 
-
-def client_thread(server_input, address):
+def upload_files(server_input, address):
 
     while True:
         
@@ -86,6 +85,14 @@ def client_thread(server_input, address):
             new_file.close()
             print("Successfully Uploaded by ", username)
             print()
+
+
+def client_thread(server_input, address):
+
+    instruction = server_input.recv(1024)
+
+    if(instruction.decode() == "Upload"):
+        upload_files(server_input, address)
 
 def create_files_folder():
     folder = os.getcwd()

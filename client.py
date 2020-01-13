@@ -5,7 +5,7 @@ import time
 from tqdm import tqdm
 from getpass import getpass
 
-address = ('localhost', 7416)
+address = ('localhost', 7410)
 
 # Create sockets
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -144,6 +144,43 @@ def menu():
     print("[2]- Upload")
     print("[3]- Close the program")
 
+
+def upload_files(username):
+    file, file_name = exception_files()
+
+    if(not file):
+        return
+    aux_size = os.stat(file_name)
+
+    aux_file_name = file_name.split("/")
+    file_name = aux_file_name[-1]
+    
+    client_socket.send("Upload".encode())
+    time.sleep(0.1)
+    file_size = str(aux_size.st_size)
+    client_socket.send(file_size.encode())
+    time.sleep(0.2)
+    client_socket.send(str(username[0][0]).encode())
+    time.sleep(0.2)
+    client_socket.send(username[0][1].encode())
+    time.sleep(0.2)
+    client_socket.send(file_name.encode())
+    time.sleep(0.2)
+
+    result = client_socket.recv(1024)
+    
+    if(result.decode() == "False"):
+        client_socket.send(file.read(aux_size.st_size))
+        progress_bar(aux_size.st_size)
+        print("Successfully Uploaded!!")
+        print()
+        time.sleep(0.1)
+    else:
+        print("You have already uploaded this file!!")
+    file.close()
+
+
+
 def transfer_files(username):
     # Echo
     print("Bem-vindo: ", username[0][1])
@@ -156,35 +193,7 @@ def transfer_files(username):
                 show_client_files(username[0][1])
             elif(op == '2'):
 
-                file, file_name = exception_files()
-                if(not file):
-                    continue
-                aux_size = os.stat(file_name)
-                
-                aux_file_name = file_name.split("/")
-                file_name = aux_file_name[-1]
-
-                file_size = str(aux_size.st_size)
-                client_socket.send(file_size.encode())
-                time.sleep(0.2)
-                client_socket.send(str(username[0][0]).encode())
-                time.sleep(0.2)
-                client_socket.send(username[0][1].encode())
-                time.sleep(0.2)
-                client_socket.send(file_name.encode())
-                time.sleep(0.2)
-
-                result = client_socket.recv(1024)
-                
-                if(result.decode() == "False"):
-                    client_socket.send(file.read(aux_size.st_size))
-                    progress_bar(aux_size.st_size)
-                    print("Successfully Uploaded!!")
-                    print()
-                    time.sleep(0.1)
-                else:
-                    print("You have already uploaded this file!!")
-                file.close()
+                upload_files(username)
             elif (op == '3'):
                 client_socket.send("Sair".encode())
                 client_socket.close()
