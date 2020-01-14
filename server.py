@@ -6,7 +6,7 @@ import os
 import sqlite3
 from tqdm import tqdm
 
-address = ('localhost', 7410)
+address = ('localhost', 2036)
 
 # Create sockets
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,16 +15,11 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind(address)
 server_socket.listen(1)
 
-def get_name(name, username):
-    new_name = name.decode().split(".")
-    new_name[1] = "." + new_name[1]
-    return (new_name[0] + new_name[1])
-
-
 def check_file_existence(username, file_name):
+
     with sqlite3.connect("USERS.db") as db:
         cursor = db.cursor()
-    find_file = ("SELECT files.filename, files.filesize FROM files INNER JOIN user ON files.user_id = user.userID AND files.filename = ? AND user.username = ? ;")
+    find_file = ("SELECT files.filename, files.filesize FROM files INNER JOIN user ON files.user_id = user.userID AND files.filename = ? AND user.username = ?;")
     cursor.execute(find_file,[(file_name),(username)])
     results = cursor.fetchone()
     if(results):
@@ -33,6 +28,18 @@ def check_file_existence(username, file_name):
     else:
         return False
 
+def check_download_file(username, file_name):
+
+    with sqlite3.connect("USERS.db") as db:
+        cursor = db.cursor()
+    find_file = ("SELECT files.fullpath, files.filesize FROM files INNER JOIN user ON files.user_id = user.userID AND user.username = ? AND files.filename = ?;")
+    cursor.execute(find_file,[(username),(file_name)])
+    results = cursor.fetchone()
+
+    if(results):
+        return results
+    else:
+        return False
 
 def save_path_file_db(username, userID, file_path, file_name, file_size):
 
@@ -43,56 +50,86 @@ def save_path_file_db(username, userID, file_path, file_name, file_size):
     db.commit()
     
 
-def upload_files(server_input, address):
+def upload_files(server_input):
 
-    while True:
-        
-        file_size = server_input.recv(1024)
-        file_size = file_size.decode()
-        if(file_size == "Sair"):
-            print("Connection terminated from ", address)
-            server_input.close()
-            break
-        file_size = int(file_size)
-        
-        userID = server_input.recv(1024)
-        userID = int(userID.decode())
-        username = server_input.recv(1024)
-        username = username.decode()
-        file_name = server_input.recv(1024)
-        new_file_name = get_name(file_name,username) 
+    file_size = int(server_input.recv(1024).decode())
+    
+    userID = int(server_input.recv(1024).decode())
+    username = server_input.recv(1024)
+    username = username.decode()
+    
+    new_file_name = server_input.recv(1024).decode()
 
-        client_folder = os.getcwd() + "/Server Files/" + username
+    client_folder = os.getcwd() + "/Server Files/" + username
+    if(not os.path.isdir(client_folder)):
+        os.mkdir(client_folder)
+    
+    save_path = client_folder + "/" + new_file_name
+    
+    result = check_file_existence(username,new_file_name)
+
+    server_input.send(str(result).encode())
+    if(not result):
+
+        save_path_file_db(username,userID,save_path,new_file_name,file_size)
+        new_file = open(save_path,'wb')
+        aux_size = 0
+        print("Uploading file...")
+        while aux_size < file_size:
+            data = server_input.recv(1024)
+            new_file.write(data)
+            aux_size += len(data)
+        
+        new_file.close()
+        print("Successfully Uploaded by ", username)
+        print()
+
+
+def download_files(server_input):
+
+    username = server_input.recv(1024).decode()
+    file_name = server_input.recv(1024).decode()
+
+    result = check_download_file(username, file_name)
+    time.sleep(0.2)
+
+    if(result):
+        
+        server_input.send("True".encode())
+        client_folder = os.getcwd() + "/Download " + username
+
         if(not os.path.isdir(client_folder)):
             os.mkdir(client_folder)
+
         
-        save_path = client_folder + "/" + new_file_name
-        
-        result = check_file_existence(username,new_file_name)
+        server_input.send(str(result[1]).encode())
 
-        server_input.send(str(result).encode())
-        if(not result):
+        new_file = open(result[0],'rb')
 
-            save_path_file_db(username,userID,save_path,new_file_name,file_size)
-            new_file = open(save_path,'wb')
-            aux_size = 0
-            print("Uploading file...")
-            while aux_size < file_size:
-                data = server_input.recv(1024)
-                new_file.write(data)
-                aux_size += len(data)
-            
-            new_file.close()
-            print("Successfully Uploaded by ", username)
-            print()
-
+        server_input.send(new_file.read(result[1]))
+        new_file.close()
+        print("Downloaded successfully by: ", username)
+    else:
+        server_input.send("False".encode())
 
 def client_thread(server_input, address):
 
-    instruction = server_input.recv(1024)
+    while True:
 
-    if(instruction.decode() == "Upload"):
-        upload_files(server_input, address)
+        instruction = server_input.recv(1024)
+
+        if(instruction.decode() == "Upload"):
+
+            upload_files(server_input)
+
+        elif(instruction.decode() == "Download"):
+
+            download_files(server_input)
+        elif(instruction.decode() == "Sair"):
+            print("Connection terminated from ", address)
+            server_input.close()
+            break
+
 
 def create_files_folder():
     folder = os.getcwd()
