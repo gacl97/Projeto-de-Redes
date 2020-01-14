@@ -20,9 +20,9 @@ def login():
         
         print("------------- User Login -------------")
         print()
-        username = input("Enter username:")
+        username = input("Enter username: ")
         print()
-        password = getpass("Enter password:")
+        password = getpass("Enter password: ")
         print()
         with sqlite3.connect("USERS.db") as db:
             cursor = db.cursor()
@@ -37,7 +37,7 @@ def login():
             return results
         else:
             print("Username or password is incorrect!")
-            again = input("Do you want to try again?(y/n)")
+            again = input("Do you want to try again? [y/n]")
             if(again.lower() == 'n'):
                 clear()
                 print("Returning to main menu!!")
@@ -53,7 +53,7 @@ def create_user():
         print("------------- User registration -------------")
         print()
 
-        username = input("Enter username:")
+        username = input("Enter username: ")
         with sqlite3.connect("USERS.db") as db:
             cursor = db.cursor()
         find_user = ("SELECT * FROM user WHERE username = ?")
@@ -70,12 +70,12 @@ def create_user():
         else:
             break
     print()
-    password = input("Enter password:")
+    password = input("Enter password: ")
     print()
-    password1 = input("Enter again your password:")
+    password1 = input("Enter again your password: ")
     while(password != password1):
         
-        print("your passwords didn't match, try again")
+        print("Your passwords didn't match, try again!!")
         password = input("Enter password:")
         password1 = input("Enter again your password:")
     insertData = '''INSERT INTO user(username,password) VALUES(?,?)'''
@@ -219,7 +219,7 @@ def download_files(username):
     show_client_files(username[0][1])
     print()
     client_socket.send("Download".encode())
-    file_name = input("Enter the file name:")
+    file_name = input("Enter the file name: ")
 
     client_socket.send(str(username[0][1]).encode())
     time.sleep(0.1)
