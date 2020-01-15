@@ -10,7 +10,6 @@ address = ('localhost', 2036)
 # Create sockets
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-
 def login():
 
 
@@ -73,11 +72,12 @@ def create_user():
     password = input("Enter password: ")
     print()
     password1 = input("Enter again your password: ")
+
     while(password != password1):
-        
         print("Your passwords didn't match, try again!!")
-        password = input("Enter password:")
-        password1 = input("Enter again your password:")
+        password = input("Enter password: ")
+        password1 = input("Enter again your password: ")
+        
     insertData = '''INSERT INTO user(username,password) VALUES(?,?)'''
     cursor.execute(insertData,[(username),(password)])
     db.commit()
