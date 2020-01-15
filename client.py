@@ -6,7 +6,7 @@ import time
 from tqdm import tqdm
 from getpass import getpass
 
-address = ('localhost', 2036)
+address = ('localhost', 2034)
 
 # Create sockets
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -84,9 +84,9 @@ def create_user():
     db.commit()
     print()
     clear()
+    line_interface("1")
     print("Successful registration!!")
-    print()
-    print()
+    line_interface("2")
     time.sleep(0.2)
 
 def show_client_files(username):
@@ -102,8 +102,9 @@ def show_client_files(username):
         for result in results:
             print("Name: ",result[0], " Size:", result[1]/1000000, "mb (",result[1],"bytes )")
     else:
+        print()
         print("You don't have any files yet!!")
-    
+        print()
     print("------------------------------------------")
     print()
 
@@ -141,34 +142,16 @@ def progress_bar(file_size):
 
     for i in tqdm(range(file_size)):
         i += 1024
-    
-def main_menu():
-    while True:
 
-        print("[1]- Login: ")
-        print("[2]- Register")
-        print("[3]- Close the program")
-        op = exception_option()
-        if(op == '1'):
-            username = login()
-            if(username != "Fail"):
-                print()
-                transfer_files(username)
-                break
-        elif(op == '2'):
-            create_user()
-        else:
-            print("Bye!!")
-            time.sleep(1)
-            break
-
-def menu():
-
-    print("[1]- Show available files: ")
-    print("[2]- Upload")
-    print("[3]- Download")
-    print("[4]- Log out")
-
+def line_interface(side):
+    if(side == "1"):
+        print("-------------------------------")
+        print()
+    else:
+        print()
+        print("-------------------------------")
+        print()
+        print()
 
 def upload_files(username):
 
@@ -199,22 +182,21 @@ def upload_files(username):
     time.sleep(0.2)
     client_socket.send(file_name.encode())
     time.sleep(0.2)
-
     result = client_socket.recv(1024)
     
     if(result.decode() == "False"):
         client_socket.send(file.read(aux_size.st_size))
         progress_bar(aux_size.st_size)
         clear()
+        line_interface("1")
         print("Successfully Uploaded!!")
-        print()
-        print()
+        line_interface("2")
         time.sleep(0.1)
     else:
         clear()
+        line_interface("1")
         print("You have already uploaded this file!!")
-        print()
-        print()
+        line_interface("2")
         time.sleep(0.1)
     file.close()
 
@@ -225,26 +207,22 @@ def download_files(username):
     print()
     client_socket.send("Download".encode())
     file_name = input("Enter the file name: ")
-
     client_socket.send(str(username[0][1]).encode())
     time.sleep(0.1)
     client_socket.send(file_name.encode())
-    time.sleep(0.1)
-    
+    time.sleep(0.1) 
     result = client_socket.recv(1024)
 
     if(result.decode() == "False"):
+        line_interface("1")
         print("File not found!!")
-        print()
+        line_interface("2")
         time.sleep(0.2)
         return
 
     file_size = int(client_socket.recv(1024).decode())
-
     client_folder = os.getcwd() + "/Download " + username[0][1] + "/" + file_name
-
     aux_size = 0
-    
     new_file = open(client_folder,'wb')
 
     while aux_size < file_size:
@@ -254,17 +232,67 @@ def download_files(username):
         
     new_file.close()
     clear()
+    line_interface("1")
     print("Downloaded successfully, your file is in your folder!!")
-    print()
-    print()
+    line_interface("2")
     time.sleep(0.2)
 
+def delete_file(username):
 
-  
+    show_client_files(username[0][1])
+    print()
+
+    client_socket.send("Delete".encode())
+    file_name = input("Enter the file name: ")
+    client_socket.send(str(username[0][1]).encode())
+    time.sleep(0.1)
+    client_socket.send(file_name.encode())
+    time.sleep(0.1)
+
+    result = client_socket.recv(1024)
+
+    if(result.decode() == "False"):
+        line_interface("1")
+        print("File not found!!")
+        line_interface("2")
+        time.sleep(0.2)
+        return
+    clear()
+    line_interface("1")
+    print("File successfully deleted!!")
+    line_interface("2")
+
 def clear():
     
     os.system('cls' if os.name == 'nt' else 'clear')
 
+def main_menu():
+    while True:
+
+        print("[1]- Login: ")
+        print("[2]- Register")
+        print("[3]- Close the program")
+        op = exception_option()
+        if(op == '1'):
+            username = login()
+            if(username != "Fail"):
+                print()
+                transfer_files(username)
+                break
+        elif(op == '2'):
+            create_user()
+        else:
+            print("Bye!!")
+            time.sleep(1)
+            break
+
+def menu():
+
+    print("[1]- Show available files: ")
+    print("[2]- Upload")
+    print("[3]- Download")
+    print("[4]- Delete a file")
+    print("[5]- Log out")
 
 def transfer_files(username):
 
@@ -287,7 +315,10 @@ def transfer_files(username):
             elif(op == '3'):
                 clear()
                 download_files(username)
-            elif (op == '4'):
+            elif(op == '4'):
+                clear()
+                delete_file(username)
+            elif (op == '5'):
                 client_socket.send("Sair".encode())
                 print("Bye!!")
                 time.sleep(0.5)
@@ -297,4 +328,5 @@ def transfer_files(username):
             print("The server has been disabled.")
             client_socket.close()
             break
+
 main_menu()
