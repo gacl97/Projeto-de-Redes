@@ -1,4 +1,5 @@
 import socket
+import re
 import os
 import sqlite3
 import time
@@ -180,8 +181,12 @@ def upload_files(username):
     aux_size = os.stat(file_name)
 
     # Diretório
-    aux_file_name = file_name.split("/")
-    file_name = aux_file_name[-1]
+    if(os.name == 'nt'):
+        aux_file_name = re.split('\\\\' , file_name)
+        file_name = aux_file_name[-1]
+    else:
+        aux_file_name = file_name.split("/")
+        file_name = aux_file_name[-1]
     
     client_socket.send("Upload".encode())
     time.sleep(0.2)
