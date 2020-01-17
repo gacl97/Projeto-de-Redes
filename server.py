@@ -34,9 +34,11 @@ def login(server_input):
         time.sleep(0.2)
         server_input.send(results[2].encode())
         time.sleep(0.2)
+        print("User successfully logged in!!")
         return "True"
     else:
         server_input.send("Fail".encode())
+        print("User failed to login!!")
         return "Fail"
 
 
@@ -72,6 +74,7 @@ def create_user(server_input):
     insertData = '''INSERT INTO user(username,password) VALUES(?,?)'''
     cursor.execute(insertData,[(username),(password)])
     db.commit()
+    print("User successfully created!!")
     time.sleep(0.2)
 
 def show_client_files(server_input):
