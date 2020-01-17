@@ -3,7 +3,6 @@ import re
 import os
 import sqlite3
 import time
-from tqdm import tqdm
 from getpass import getpass
 
 address = ('localhost', 2045)
@@ -145,11 +144,6 @@ def exception_files():
             return [False,False]
         clear()
 
-def progress_bar(file_size):
-
-    for i in tqdm(range(file_size)):
-        i += 1024
-
 def line_interface(side):
     if(side == "1"):
         print("-------------------------------")
@@ -192,8 +186,8 @@ def upload_files(username):
     result = client_socket.recv(1024)
     
     if(result.decode() == "False"):
+        print("Uploading file...")
         client_socket.send(file.read(aux_size.st_size))
-        progress_bar(aux_size.st_size)
         clear()
         line_interface("1")
         print("Successfully Uploaded!!")

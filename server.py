@@ -4,7 +4,6 @@ import socket
 import _thread
 import os
 import sqlite3
-from tqdm import tqdm
 
 address = ('localhost', 2045)
 
