@@ -6,14 +6,13 @@ import time
 from tqdm import tqdm
 from getpass import getpass
 
-address = ('localhost', 2034)
+address = ('localhost', 2045)
 
 # Create sockets
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 def login():
-
-
+    
     while True:
 
         clear()
@@ -21,67 +20,69 @@ def login():
         print("------------- User Login -------------")
         print()
         username = input("Enter username: ")
+        client_socket.send(username.encode())
+        time.sleep(0.2)
         print()
         password = getpass("Enter password: ")
+        client_socket.send(password.encode())
+        time.sleep(0.2)
         print()
-        with sqlite3.connect("USERS.db") as db:
-            cursor = db.cursor()
-        find_user = ("SELECT * FROM user WHERE username = ? AND password = ?")
-        cursor.execute(find_user,[(username),(password)])
-        results = cursor.fetchall()
 
-        if(results):
+        results = client_socket.recv(1024)
+        time.sleep(0.2)
+        if(results.decode() == "Fail"):
             clear()
-            print("Login successfully!")
-            time.sleep(0.2)
-            return results
-        else:
             print("Username or password is incorrect!")
-            again = input("Do you want to try again? [y/n]")
-            if(again.lower() == 'n'):
-                clear()
-                print("Returning to main menu!!")
-                print()
-                print()
-                time.sleep(0.2)
-                return "Fail"
+            print("Returning to main menu!!")
+            print()
+            print()
+            time.sleep(0.2)
+            return "Fail"
+
+        results1 = client_socket.recv(1024)
+        time.sleep(0.2)
+        results2 = client_socket.recv(1024)
+        time.sleep(0.2)
+
+        return [results.decode(), results1.decode(), results2.decode()]
         
 def create_user():
 
-    while True:
-        clear()
-        print("------------- User registration -------------")
-        print()
+    clear()
+    print("------------- User registration -------------")
+    print()
 
-        username = input("Enter username: ")
-        with sqlite3.connect("USERS.db") as db:
-            cursor = db.cursor()
-        find_user = ("SELECT * FROM user WHERE username = ?")
-        cursor.execute(find_user,[(username)])
-        
-        if(cursor.fetchall()):
-            clear()
-            again = input("This username already exists, do you want to try again? [y,n]")
-            if(again.lower() == 'n'):
-                clear()
-                print("Returning to main menu!!")
-                time.sleep(1)
-                return
-        else:
-            break
+    username = input("Enter username: ")
+    client_socket.send(username.encode())
+    time.sleep(0.2)
+
+    result = client_socket.recv(1024).decode()
+    if(result == "Fail"):
+        clear()
+        print("Returning to main menu!!")
+        time.sleep(1)
+        return
+    
     print()
     password = input("Enter password: ")
+    client_socket.send(password.encode())
+    time.sleep(0.2)
     print()
     password1 = input("Enter again your password: ")
+    client_socket.send(password1.encode())
+    time.sleep(0.2)
 
     while(password != password1):
         print("Your passwords didn't match, try again!!")
+        print()
         password = input("Enter password: ")
+        client_socket.send(password.encode())
+        time.sleep(0.2)
+        print()
         password1 = input("Enter again your password: ")
+        client_socket.send(password1.encode())
+        time.sleep(0.2)
         
-    insertData = '''INSERT INTO user(username,password) VALUES(?,?)'''
-    cursor.execute(insertData,[(username),(password)])
-    db.commit()
     print()
     clear()
     line_interface("1")
@@ -91,22 +92,28 @@ def create_user():
 
 def show_client_files(username):
 
-    with sqlite3.connect("USERS.db") as db:
-        cursor = db.cursor()
-    find_file = ("SELECT files.filename, files.filesize FROM files INNER JOIN user ON files.user_id = user.userID AND user.username = ?;")
-    cursor.execute(find_file,[(username)])
-    results = cursor.fetchall()
+    client_socket.send("Show".encode())
+    time.sleep(0.2)
+    client_socket.send(username.encode())
+    time.sleep(0.2)
     print("-------------- "+ username +" FILES -------------")
-
-    if(len(results) != 0):
-        for result in results:
-            print("Name: ",result[0], " Size:", result[1]/1000000, "mb (",result[1],"bytes )")
+    
+    results = int(client_socket.recv(1024).decode())
+    time.sleep(0.2)
+    if(results != 0):
+        for i in range(results):
+            name = client_socket.recv(1024).decode()
+            time.sleep(0.2)
+            size = int(client_socket.recv(1024).decode())
+            time.sleep(0.2)
+            print("Name: ",name, " Size:", size/1000000, "mb (",size,"bytes )")
     else:
         print()
         print("You don't have any files yet!!")
         print()
     print("------------------------------------------")
     print()
+
 
 def exception_option():
 
@@ -176,9 +183,9 @@ def upload_files(username):
     file_size = str(aux_size.st_size)
     client_socket.send(file_size.encode())
     time.sleep(0.2)
-    client_socket.send(str(username[0][0]).encode())
+    client_socket.send(str(username[0]).encode())
     time.sleep(0.2)
-    client_socket.send(username[0][1].encode())
+    client_socket.send(username[1].encode())
     time.sleep(0.2)
     client_socket.send(file_name.encode())
     time.sleep(0.2)
@@ -203,11 +210,11 @@ def upload_files(username):
 
 def download_files(username):
 
-    show_client_files(username[0][1])
+    show_client_files(username[1])
     print()
     client_socket.send("Download".encode())
     file_name = input("Enter the file name: ")
-    client_socket.send(str(username[0][1]).encode())
+    client_socket.send(str(username[1]).encode())
     time.sleep(0.1)
     client_socket.send(file_name.encode())
     time.sleep(0.1) 
@@ -221,7 +228,7 @@ def download_files(username):
         return
 
     file_size = int(client_socket.recv(1024).decode())
-    client_folder = os.getcwd() + "/Download " + username[0][1] + "/" + file_name
+    client_folder = os.getcwd() + "/Download " + username[1] + "/" + file_name
     aux_size = 0
     new_file = open(client_folder,'wb')
 
@@ -239,12 +246,12 @@ def download_files(username):
 
 def delete_file(username):
 
-    show_client_files(username[0][1])
+    show_client_files(username[1])
     print()
 
     client_socket.send("Delete".encode())
     file_name = input("Enter the file name: ")
-    client_socket.send(str(username[0][1]).encode())
+    client_socket.send(str(username[1]).encode())
     time.sleep(0.1)
     client_socket.send(file_name.encode())
     time.sleep(0.1)
@@ -267,6 +274,7 @@ def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def main_menu():
+    client_socket.connect(address)
     while True:
 
         print("[1]- Login: ")
@@ -274,17 +282,22 @@ def main_menu():
         print("[3]- Close the program")
         op = exception_option()
         if(op == '1'):
+            client_socket.send('Login'.encode())
             username = login()
             if(username != "Fail"):
                 print()
                 transfer_files(username)
                 break
         elif(op == '2'):
+            client_socket.send("Register".encode())
             create_user()
         else:
+            client_socket.send("Close".encode())
             print("Bye!!")
             time.sleep(1)
+            client_socket.close()
             break
+    
 
 def menu():
 
@@ -298,17 +311,16 @@ def transfer_files(username):
 
     print("-----------------------------")
     print()
-    print("Welcome: ", username[0][1])
+    print("Welcome: ", username[1])
     print()
     print("-----------------------------")
-    client_socket.connect(address)
     while True:
         try:
             menu()
             op = exception_option()
             if(op == '1'):
                 clear()
-                show_client_files(username[0][1])
+                show_client_files(username[1])
             elif(op == '2'):
                 clear()
                 upload_files(username)
@@ -319,7 +331,7 @@ def transfer_files(username):
                 clear()
                 delete_file(username)
             elif (op == '5'):
-                client_socket.send("Sair".encode())
+                client_socket.send("Close".encode())
                 print("Bye!!")
                 time.sleep(0.5)
                 client_socket.close()

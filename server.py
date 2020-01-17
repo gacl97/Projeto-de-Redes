@@ -6,13 +6,92 @@ import os
 import sqlite3
 from tqdm import tqdm
 
-address = ('localhost', 2034)
+address = ('localhost', 2045)
 
 # Create sockets
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Connect sockets
 server_socket.bind(address)
 server_socket.listen(1)
+
+def login(server_input):
+
+    username = server_input.recv(1024).decode()
+    time.sleep(0.2)
+    password = server_input.recv(1024).decode()
+    time.sleep(0.2)
+    # print(user)
+    with sqlite3.connect("USERS.db") as db:
+        cursor = db.cursor()
+    find_user = ("SELECT * FROM user WHERE username = ? AND password = ?")
+    cursor.execute(find_user,[(username),(password)])
+    results = cursor.fetchone()
+
+    if(results):
+        server_input.send(str(results[0]).encode())
+        time.sleep(0.2)
+        server_input.send(results[1].encode())
+        time.sleep(0.2)
+        server_input.send(results[2].encode())
+        time.sleep(0.2)
+        return "True"
+    else:
+        server_input.send("Fail".encode())
+        return "Fail"
+
+
+def create_user(server_input):
+
+
+    username = server_input.recv(1024).decode()
+    time.sleep(0.2)
+    with sqlite3.connect("USERS.db") as db:
+        cursor = db.cursor()
+    find_user = ("SELECT * FROM user WHERE username = ?")
+    cursor.execute(find_user,[(username)])
+    
+    if(cursor.fetchall()):
+        server_input.send("Fail".encode())
+        time.sleep(0.2)
+        return
+    
+    server_input.send("True".encode())
+    time.sleep(0.2)
+    password = server_input.recv(1024).decode()
+    time.sleep(0.2)
+    password1 = server_input.recv(1024).decode()
+    time.sleep(0.2)
+
+    while(password != password1):
+        time.sleep(0.2)
+        password = server_input.recv(1024).decode()
+        time.sleep(0.2)
+        password1 = server_input.recv(1024).decode()
+        time.sleep(0.2)
+    
+    insertData = '''INSERT INTO user(username,password) VALUES(?,?)'''
+    cursor.execute(insertData,[(username),(password)])
+    db.commit()
+    time.sleep(0.2)
+
+def show_client_files(server_input):
+    
+    username = server_input.recv(1024).decode()
+    time.sleep(0.2)
+    with sqlite3.connect("USERS.db") as db:
+        cursor = db.cursor()
+    find_file = ("SELECT files.filename, files.filesize FROM files INNER JOIN user ON files.user_id = user.userID AND user.username = ?;")
+    cursor.execute(find_file,[(username)])
+    results = cursor.fetchall()
+
+    server_input.send(str(len(results)).encode())
+    time.sleep(0.2)
+    if(len(results) != 0):
+        for result in results:
+            server_input.send(str(result[0]).encode())
+            time.sleep(0.2)
+            server_input.send(str(result[1]).encode())
+            time.sleep(0.2)
 
 def check_upload_file(username, file_name):
 
@@ -144,16 +223,31 @@ def delete_file(server_input):
 def client_thread(server_input, address):
 
     while True:
-
         instruction = server_input.recv(1024)
+        time.sleep(0.2)
+        if(instruction.decode() == "Login"):
+            if(login(server_input) == "True"):
+                break
+        elif(instruction.decode() == "Register"):
+            create_user(server_input)
+        elif(instruction.decode() == "Close"):
+            print("Connection terminated from ", address)
+            server_input.close()
+            return
 
-        if(instruction.decode() == "Upload"):
+    while True:
+
+        instruction = server_input.recv(1024).decode()
+
+        if(instruction == "Upload"):
             upload_files(server_input)
-        elif(instruction.decode() == "Download"):
+        elif(instruction == "Download"):
             download_files(server_input)
-        elif(instruction.decode() == "Delete"):
+        elif(instruction == "Delete"):
             delete_file(server_input)
-        elif(instruction.decode() == "Sair"):
+        elif(instruction == "Show"):
+            show_client_files(server_input)
+        elif(instruction == "Close"):
             print("Connection terminated from ", address)
             server_input.close()
             break
