@@ -32,10 +32,10 @@ def login():
         time.sleep(0.2)
         if(results.decode() == "Fail"):
             clear()
+            line_interface("1")
             print("Username or password is incorrect!")
             print("Returning to main menu!!")
-            print()
-            print()
+            line_interface("2")
             time.sleep(0.2)
             return "Fail"
 
