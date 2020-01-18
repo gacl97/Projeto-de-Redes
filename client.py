@@ -5,7 +5,10 @@ import sqlite3
 import time
 from getpass import getpass
 
-address = ('localhost', 2045)
+host = input("Host: ")
+port = int(input("Port: "))
+
+address = (host, port)
 
 # Create sockets
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

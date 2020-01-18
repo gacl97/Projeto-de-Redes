@@ -5,7 +5,12 @@ import _thread
 import os
 import sqlite3
 
-address = ('localhost', 2045)
+port = int(input("Port: "))
+address = ('localhost', port)
+os.system('cls' if os.name == 'nt' else 'clear')
+print("------------ Server -------------")
+print()
+print()
 
 # Create sockets
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
