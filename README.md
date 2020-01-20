@@ -1,6 +1,6 @@
 # Projeto-de-Redes
 
-O projeto foi desenvolvido para a disciplina de Rede 1, é um programa que realiza transferências de arquivos (Peer-to-peer) com um Servidor e vários Clientes. Cada usuário que cadastrar no programa terá a possibilidade de salvar arquivos, fazer download e deletar arquivos que não quer mais do servidor. 
+O projeto foi desenvolvido para a disciplina de Redes 1, é um programa que realiza transferências de arquivos (Peer-to-peer) com um Servidor e vários Clientes. Cada usuário que cadastrar no programa terá a possibilidade de salvar arquivos, fazer download e deletar arquivos que não quer mais do servidor. 
 Cada usuário terá uma pasta no servidor para identificação de seus próprios arquivos não interferindo nos demais. Ao fazer download de qualquer arquivo, será criado uma pasta no mesmo local onde o programa foi salvo e nela será salvo todos os arquivos que forem feito o download. Foi utilizado Sqlite3 para armazenamento dos usuários e dos dirétorios dos arquivos salvos no servidor.
 
 ## Desenvolvimento
