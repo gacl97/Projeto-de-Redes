@@ -6,7 +6,7 @@ import os
 import sqlite3
 
 port = int(input("Port: "))
-address = ('172.20.8.231', port)
+address = ('localhost', port)
 os.system('cls' if os.name == 'nt' else 'clear')
 print("------------ Server -------------")
 print()
