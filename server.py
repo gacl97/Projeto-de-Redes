@@ -6,7 +6,7 @@ import os
 import sqlite3
 
 port = int(input("Port: "))
-address = ('localhost', port)
+address = ('172.20.8.231', port)
 os.system('cls' if os.name == 'nt' else 'clear')
 print("------------ Server -------------")
 print()
@@ -157,6 +157,7 @@ def upload_files(server_input):
     new_file_name = server_input.recv(1024).decode()
 
     client_folder = os.getcwd() + "/Server Files/" + username
+    
     if(not os.path.isdir(client_folder)):
         os.mkdir(client_folder)
     
@@ -202,6 +203,7 @@ def download_files(server_input):
             os.mkdir(client_folder)
         
         server_input.send(str(result[1]).encode())
+        time.sleep(0.2)
         new_file = open(result[0],'rb')
         server_input.send(new_file.read(result[1]))
         new_file.close()

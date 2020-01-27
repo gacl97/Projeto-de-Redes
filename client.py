@@ -225,7 +225,12 @@ def download_files(username):
         return
 
     file_size = int(client_socket.recv(1024).decode())
-    client_folder = os.getcwd() + "/Download " + username[1] + "/" + file_name
+    client_folder = os.getcwd() + "/Download " + username[1] + "/"
+
+    if(not os.path.isdir(client_folder)):
+        os.mkdir(client_folder)
+    
+    client_folder += file_name
     aux_size = 0
     new_file = open(client_folder,'wb')
 
